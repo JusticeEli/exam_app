@@ -1,89 +1,386 @@
 package com.justice.examapp;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.ContextCompat;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.os.CountDownTimer;
+import android.os.Handler;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.ProgressBar;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.QuerySnapshot;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+
 import es.dmoral.toasty.Toasty;
 
-public class TestActivity extends AppCompatActivity {
-    private TextView questionTxtView;
+import static com.justice.examapp.QuestionAddActivity.COLLECTION_QUESTIONS;
+import static com.justice.examapp.TestCompleteActivity.COLLECTION_RESULTS;
 
-    private RadioGroup radioGroup;
-    private RadioButton aRadioButton;
-    private RadioButton bRadioButton;
-    private RadioButton cRadioButton;
-    private RadioButton dRadioButton;
-    private ImageView nextImageView;
-    private int position;
+public class TestActivity extends AppCompatActivity implements View.OnClickListener {
+    private static final String TAG = "TestActivity";
+    private FirebaseFirestore firebaseFirestore = FirebaseFirestore.getInstance();
+    private FirebaseAuth firebaseAuth;
+
+    private String currentUserId;
+
+    private String quizName;
+    private String quizId;
+
+    //UI Elements
+    private TextView quizTitle;
+    private Button optionOneBtn;
+    private Button optionTwoBtn;
+    private Button optionThreeBtn;
+    private Button nextBtn;
+    private ImageButton closeBtn;
+    private TextView questionFeedback;
+    private TextView questionText;
+    private TextView questionTime;
+    private ProgressBar questionProgress;
+    private ProgressBar progressBarLoading;
+
+    private TextView questionNumber;
+
+    private List<QuestionModel> questionsToAnswer = new ArrayList<>();
+    private int totalQuestionsToAnswer;
+    private CountDownTimer countDownTimer;
+
+    private boolean canAnswer = false;
+    private int currentQuestion = 0;
+
+    private int correctAnswers = 0;
+    private int wrongAnswers = 0;
+    private int notAnswered = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_test);
+        checkIfUserIsLogedIn();
         initWidgets();
         setOnClickListeners();
-        setDefaultValues();
+        queryFirestoreData();
 
     }
 
-    private void setOnClickListeners() {
-        nextImageView.setOnClickListener(new View.OnClickListener() {
+    private void queryFirestoreData() {
+        //Query Firestore Data
+        firebaseFirestore = FirebaseFirestore.getInstance();
+
+
+        firebaseFirestore.collection(COLLECTION_QUESTIONS).get().addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
             @Override
-            public void onClick(View v) {
-                updateMarks();
-                updateQuestion();
-                if (ApplicationClass.questionList.size() == position + 1) {
-                    startActivity(new Intent(TestActivity.this, TestCompleteActivity.class));
+            public void onComplete(@NonNull Task<QuerySnapshot> task) {
+                if (task.isSuccessful()) {
+                    questionsToAnswer = task.getResult().toObjects(com.justice.examapp.QuestionModel.class);
+                    totalQuestionsToAnswer = questionsToAnswer.size();
+                    pickQuestions();
+                    loadUI();
+                } else {
+                    quizTitle.setText("Error : " + task.getException().getMessage());
                 }
-
-
-                position++;//go to the next question
             }
         });
+
     }
 
-    private void updateQuestion() {
-        setDefaultValues();
+    private void loadUI() {
+        //Quiz Data Loaded, Load the UI
+        quizTitle.setText(quizName);
+        questionText.setText("Load First Question");
+
+        //Enable Options
+        enableOptions();
+
+        //Load First Question
+        loadQuestion(1);
     }
 
-    private void updateMarks() {
-        RadioButton radioButton=findViewById(radioGroup.getCheckedRadioButtonId());
-        if (ApplicationClass.questionList.get(position).getAnswer().equals(radioButton.getText().toString())){
-            ApplicationClass.marks++;
-            Toasty.success(this, "Correct", Toast.LENGTH_SHORT, true).show();
+    private void loadQuestion(int questNum) {
+        //Set Question Number
+        questionNumber.setText(questNum + "");
 
-        }else {
-            Toasty.error(this, "Wrong", Toast.LENGTH_SHORT, true).show();
+        //Load Question Text
+        questionText.setText(questionsToAnswer.get(questNum - 1).getQuestion());
 
+        //Load Options
+        optionOneBtn.setText(questionsToAnswer.get(questNum - 1).getOption_a());
+        optionTwoBtn.setText(questionsToAnswer.get(questNum - 1).getOption_b());
+        optionThreeBtn.setText(questionsToAnswer.get(questNum - 1).getOption_c());
+
+        //Question Loaded, Set Can Answer
+        canAnswer = true;
+        currentQuestion = questNum;
+
+        //Start Question Timer
+        startTimer(questNum);
+    }
+
+    private void startTimer(int questionNumber) {
+
+        //Set Timer Text
+        final Long timeToAnswer = questionsToAnswer.get(questionNumber - 1).getTimer();
+        questionTime.setText(timeToAnswer.toString());
+
+        //Show Timer ProgressBar
+        questionProgress.setVisibility(View.VISIBLE);
+        if (countDownTimer != null) {
+            countDownTimer.cancel();
+
+        }
+        //Start CountDown
+        countDownTimer = new CountDownTimer(timeToAnswer * 1000, 10) {
+            @Override
+            public void onTick(long millisUntilFinished) {
+                //Update Time
+                questionTime.setText(millisUntilFinished / 1000 + "");
+
+                //Progress in percent
+                Long percent = millisUntilFinished / (timeToAnswer * 10);
+                questionProgress.setProgress(percent.intValue());
+                Log.d(TAG, "onTick: " + millisUntilFinished / 1000);
+            }
+
+            @Override
+            public void onFinish() {
+                //Time Up, Cannot Answer Question Anymore
+                canAnswer = false;
+
+                questionFeedback.setText("Time Up! No answer was submitted.");
+                questionFeedback.setTextColor(ContextCompat.getColor(TestActivity.this, R.color.colorPrimary));
+                notAnswered++;
+                showNextBtn();
+            }
+        };
+
+        countDownTimer.start();
+    }
+
+    private void enableOptions() {
+        //Show All Option Buttons
+        optionOneBtn.setVisibility(View.VISIBLE);
+        optionTwoBtn.setVisibility(View.VISIBLE);
+        optionThreeBtn.setVisibility(View.VISIBLE);
+
+        //Enable Option Buttons
+        optionOneBtn.setEnabled(true);
+        optionTwoBtn.setEnabled(true);
+        optionThreeBtn.setEnabled(true);
+
+        //Hide Feedback and next Button
+        questionFeedback.setVisibility(View.INVISIBLE);
+        nextBtn.setVisibility(View.INVISIBLE);
+        nextBtn.setEnabled(false);
+    }
+
+    private void pickQuestions() {
+
+        Collections.shuffle(questionsToAnswer);
+    }
+
+    private int getRandomInt(int min, int max) {
+        return ((int) (Math.random() * (max - min))) + min;
+    }
+
+    @Override
+    public void onClick(View v) {
+        switch (v.getId()) {
+            case R.id.quiz_close_btn:
+                closeBtnClicked();
+                break;
+
+            case R.id.quiz_option_one:
+                verifyAnswer(optionOneBtn);
+                break;
+            case R.id.quiz_option_two:
+                verifyAnswer(optionTwoBtn);
+                break;
+            case R.id.quiz_option_three:
+                verifyAnswer(optionThreeBtn);
+                break;
+            case R.id.quiz_next_btn:
+                if (currentQuestion == totalQuestionsToAnswer) {
+                    //Load Results
+                    submitResults();
+                } else {
+                    currentQuestion++;
+                    loadQuestion(currentQuestion);
+                    resetOptions();
+                }
+                break;
         }
     }
 
-    private void setDefaultValues() {
-        questionTxtView.setText(ApplicationClass.questionList.get(position).getQuestion());
-        aRadioButton.setText(ApplicationClass.questionList.get(position).getFirstChoice());
-        bRadioButton.setText(ApplicationClass.questionList.get(position).getSecondChoice());
-        cRadioButton.setText(ApplicationClass.questionList.get(position).getThirdChoice());
-        dRadioButton.setText(ApplicationClass.questionList.get(position).getForthChoice());
+    private void closeBtnClicked() {
+        startActivity(new Intent(this, StudentFirstPageActivity.class));
+        finish();
+    }
+
+    private void submitResults() {
+
+        Results results = new Results();
+        results.setCorrect((long) correctAnswers);
+        results.setWrong((long) wrongAnswers);
+        results.setUnanswered((long) notAnswered);
+
+        ApplicationClass.student.setResults(results);
+        progressBarLoading.setVisibility(View.VISIBLE);
+        nextBtn.setVisibility(View.GONE);
+        firebaseFirestore.collection(COLLECTION_RESULTS).document(firebaseAuth.getUid()).set(ApplicationClass.student).addOnCompleteListener(new OnCompleteListener<Void>() {
+            @Override
+            public void onComplete(@NonNull Task<Void> task) {
+                if (task.isSuccessful()) {
+                    //Go To Results Page
+                    startActivity(new Intent(TestActivity.this, TestCompleteActivity.class));
+                } else {
+                    //Show Error
+                    quizTitle.setText(task.getException().getMessage());
+                    Toasty.error(TestActivity.this, task.getException().getMessage()).show();
+                }
+                progressBarLoading.setVisibility(View.GONE);
+                nextBtn.setVisibility(View.VISIBLE);
+
+            }
+        });
+
 
     }
 
-    private void initWidgets() {
-        questionTxtView = findViewById(R.id.questionTxtView);
-        radioGroup = findViewById(R.id.radioGroup);
-        aRadioButton = findViewById(R.id.aRadioBtn);
-        bRadioButton = findViewById(R.id.bRadioBtn);
-        cRadioButton = findViewById(R.id.cRadioBtn);
-        dRadioButton = findViewById(R.id.dRadioBtn);
-        nextImageView = findViewById(R.id.nextImageView);
+    private void resetOptions() {
+        optionOneBtn.setBackground(getResources().getDrawable(R.drawable.outline_light_btn_bg, null));
+        optionTwoBtn.setBackground(getResources().getDrawable(R.drawable.outline_light_btn_bg, null));
+        optionThreeBtn.setBackground(getResources().getDrawable(R.drawable.outline_light_btn_bg, null));
 
+        optionOneBtn.setTextColor(ContextCompat.getColor(this, R.color.colorLightText));
+        optionTwoBtn.setTextColor(ContextCompat.getColor(this, R.color.colorLightText));
+        optionThreeBtn.setTextColor(ContextCompat.getColor(this, R.color.colorLightText));
+
+        questionFeedback.setVisibility(View.INVISIBLE);
+        nextBtn.setVisibility(View.INVISIBLE);
+        nextBtn.setEnabled(false);
+    }
+
+    private void verifyAnswer(Button selectedAnswerBtn) {
+        //Check Answer
+        if (canAnswer) {
+            //Set Answer Btn Text Color to Black
+            selectedAnswerBtn.setTextColor(ContextCompat.getColor(this, R.color.colorDark));
+
+            if (questionsToAnswer.get(currentQuestion - 1).getAnswer().equals(selectedAnswerBtn.getText())) {
+                //Correct Answer
+                correctAnswers++;
+                selectedAnswerBtn.setBackground(getResources().getDrawable(R.drawable.correct_answer_btn_bg, null));
+
+                //Set Feedback Text
+                questionFeedback.setText("Correct Answer");
+                questionFeedback.setTextColor(ContextCompat.getColor(this, R.color.colorPrimary));
+            } else {
+                //Wrong Answer
+                wrongAnswers++;
+                selectedAnswerBtn.setBackground(getResources().getDrawable(R.drawable.wrong_answer_btn_bg, null));
+
+                //Set Feedback Text
+                questionFeedback.setText("Wrong Answer \n \n Correct Answer : " + questionsToAnswer.get(currentQuestion - 1).getAnswer());
+                questionFeedback.setTextColor(ContextCompat.getColor(this, R.color.colorAccent));
+            }
+            //Set Can answer to false
+            canAnswer = false;
+
+            //Stop The Timer
+            countDownTimer.cancel();
+
+            //Show Next Button
+            showNextBtn();
+        }
+    }
+
+    private void showNextBtn() {
+        if (currentQuestion == totalQuestionsToAnswer) {
+            nextBtn.setText("Submit Results");
+        }
+        questionFeedback.setVisibility(View.VISIBLE);
+        nextBtn.setVisibility(View.VISIBLE);
+        nextBtn.setEnabled(true);
+    }
+
+    private void checkIfUserIsLogedIn() {
+        firebaseAuth = FirebaseAuth.getInstance();
+
+        //Get User ID
+        if (firebaseAuth.getCurrentUser() != null) {
+            currentUserId = firebaseAuth.getCurrentUser().getUid();
+        } else {
+            //Go Back to Home Page
+            finish();
+        }
+    }
+
+    private void setOnClickListeners() {
+        //Set Button Click Listeners
+        closeBtn.setOnClickListener(this);
+        optionOneBtn.setOnClickListener(this);
+        optionTwoBtn.setOnClickListener(this);
+        optionThreeBtn.setOnClickListener(this);
+        nextBtn.setOnClickListener(this);
+    }
+
+
+    private void initWidgets() {
+        //UI Initialize
+        closeBtn = findViewById(R.id.quiz_close_btn);
+        quizTitle = findViewById(R.id.quiz_title);
+        optionOneBtn = findViewById(R.id.quiz_option_one);
+        optionTwoBtn = findViewById(R.id.quiz_option_two);
+        optionThreeBtn = findViewById(R.id.quiz_option_three);
+        nextBtn = findViewById(R.id.quiz_next_btn);
+        questionFeedback = findViewById(R.id.quiz_question_feedback);
+        questionText = findViewById(R.id.quiz_question);
+        questionTime = findViewById(R.id.quiz_question_time);
+        questionProgress = findViewById(R.id.quiz_question_progress);
+        progressBarLoading = findViewById(R.id.progressBarLoading);
+        questionNumber = findViewById(R.id.quiz_question_number);
+
+
+        //Query Firestore Data
+
+        firebaseFirestore.collection(COLLECTION_QUESTIONS).get().addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
+            @Override
+            public void onComplete(@NonNull Task<QuerySnapshot> task) {
+                if (task.isSuccessful()) {
+                    questionsToAnswer = task.getResult().toObjects(com.justice.examapp.QuestionModel.class);
+                    pickQuestions();
+                    loadUI();
+                } else {
+                    quizTitle.setText("Error : " + task.getException().getMessage());
+                }
+            }
+        });
+
+        //Set Button Click Listeners
+        optionOneBtn.setOnClickListener(this);
+        optionTwoBtn.setOnClickListener(this);
+        optionThreeBtn.setOnClickListener(this);
+
+        nextBtn.setOnClickListener(this);
     }
 }

@@ -2,13 +2,16 @@
 <androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
-    android:layout_height="100dp"
+    android:layout_height="wrap_content"
     android:orientation="vertical"
+    app:cardBackgroundColor="@color/colorPrimaryDark"
+    android:layout_marginTop="8dp"
     app:cardCornerRadius="10dp"
     app:cardElevation="10dp"
     app:cardUseCompatPadding="false">
 
     <LinearLayout
+        android:padding="5dp"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:orientation="vertical">
@@ -16,20 +19,25 @@
         <TextView
             android:id="@+id/questionTxtView"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
+            android:layout_height="wrap_content"
+            android:text="question"
             android:textAppearance="@style/TextAppearance.AppCompat.Large" />
 
-        <TextView
-            android:layout_marginTop="10dp"
-            android:id="@+id/answerEdtTxt"
+        <RadioButton
+            android:id="@+id/answerRadioButton"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:layout_marginLeft="10dp"
+            android:checked="true"
+            android:text="answer"
             android:textAppearance="@style/TextAppearance.AppCompat.Body1" />
 
         <TextView
             android:id="@+id/dateTxtView"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
+            android:layout_marginLeft="200dp"
+            android:layout_height="wrap_content"
             android:text="12:34pn" />
 
     </LinearLayout>

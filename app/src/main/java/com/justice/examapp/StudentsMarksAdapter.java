@@ -26,8 +26,11 @@ public class StudentsMarksAdapter extends FirestoreRecyclerAdapter<Student, Stud
     @Override
     protected void onBindViewHolder(@NonNull ViewHolder holder, int position, @NonNull Student model) {
         holder.studentNameTxtView.setText(model.getFirstName()+" "+model.getLastName());
-        holder.studentIdTxtView.setText(model.getId());
-        holder.studentMarksTxtView.setText(model.getMarks()+" out of "+model.getOutOf());
+     //   holder.studentIdTxtView.setText(model.getId());
+
+        Results results=model.getResults();
+        int outOf= (int) (results.getCorrect()+results.getWrong()+results.getUnanswered());
+        holder.studentMarksTxtView.setText(results.getCorrect()+" out of "+outOf);
 
     }
 
@@ -43,19 +46,15 @@ public class StudentsMarksAdapter extends FirestoreRecyclerAdapter<Student, Stud
 
     public class ViewHolder extends RecyclerView.ViewHolder {
         private TextView studentNameTxtView;
-        private TextView studentIdTxtView;
-        private TextView studentMarksTxtView;
+       private TextView studentMarksTxtView;
 
 
         public ViewHolder(@NonNull View itemView) {
             super(itemView);
             studentNameTxtView = itemView.findViewById(R.id.studentNameTxtView);
-            studentIdTxtView = itemView.findViewById(R.id.studentIdTxtView);
             studentMarksTxtView = itemView.findViewById(R.id.studentsMarksTxtView);
 
         }
-
-
     }
 
 

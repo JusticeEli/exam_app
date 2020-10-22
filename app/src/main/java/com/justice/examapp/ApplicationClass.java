@@ -11,6 +11,6 @@ public class ApplicationClass extends Application {
     public static Student student;
     public static int marks;
 
-    public static List<QuestionData> questionList;
+    public static List<QuestionModel> questionList;
 
 }

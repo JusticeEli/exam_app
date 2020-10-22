@@ -15,6 +15,8 @@ import android.widget.TextView;
 
 import com.google.firebase.firestore.SetOptions;
 
+import org.w3c.dom.Text;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -25,16 +27,17 @@ public class QuestionActivity extends AppCompatActivity {
     private RadioButton aRadioButton;
     private RadioButton bRadioButton;
     private RadioButton cRadioButton;
-    private RadioButton dRadioButton;
+    private Button saveBtn;
     private Button editBtn;
-    private QuestionData questionDataOriginal;
+    private QuestionModel questionDataOriginal;
+    private TextView timerTxtView;
 
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_question);
-        questionDataOriginal = ApplicationClass.documentSnapshot.toObject(QuestionData.class);
+        questionDataOriginal = ApplicationClass.documentSnapshot.toObject(QuestionModel.class);
         initWidgets();
         setOnClickListeners();
         setDefaultValues();
@@ -42,10 +45,10 @@ public class QuestionActivity extends AppCompatActivity {
 
     private void setDefaultValues() {
         questionTxtView.setText(questionDataOriginal.getQuestion());
-        aRadioButton.setText(questionDataOriginal.getFirstChoice());
-        bRadioButton.setText(questionDataOriginal.getSecondChoice());
-        cRadioButton.setText(questionDataOriginal.getThirdChoice());
-        dRadioButton.setText(questionDataOriginal.getForthChoice());
+        aRadioButton.setText(questionDataOriginal.getOption_a());
+        bRadioButton.setText(questionDataOriginal.getOption_b());
+        cRadioButton.setText(questionDataOriginal.getOption_c());
+        timerTxtView.setText(questionDataOriginal.getTimer() + " seconds to answer the question");
 
         setTheAnswerForQuestion();
 
@@ -53,19 +56,24 @@ public class QuestionActivity extends AppCompatActivity {
 
     private void setTheAnswerForQuestion() {
 
-        if (questionDataOriginal.getAnswer().equals(questionDataOriginal.getFirstChoice())) {
+        if (questionDataOriginal.getAnswer().equals(questionDataOriginal.getOption_a())) {
             aRadioButton.setChecked(true);
-        } else if (questionDataOriginal.getAnswer().equals(questionDataOriginal.getSecondChoice())) {
+        } else if (questionDataOriginal.getAnswer().equals(questionDataOriginal.getOption_b())) {
             bRadioButton.setChecked(true);
-        } else if (questionDataOriginal.getAnswer().equals(questionDataOriginal.getThirdChoice())) {
+        } else if (questionDataOriginal.getAnswer().equals(questionDataOriginal.getOption_c())) {
             cRadioButton.setChecked(true);
 
-        } else if (questionDataOriginal.getAnswer().equals(questionDataOriginal.getForthChoice())) {
-            dRadioButton.setChecked(true);
         }
     }
 
     private void setOnClickListeners() {
+
+        saveBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                onBackPressed();
+            }
+        });
         editBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -82,7 +90,8 @@ public class QuestionActivity extends AppCompatActivity {
         aRadioButton = findViewById(R.id.aRadioBtn);
         bRadioButton = findViewById(R.id.bRadioBtn);
         cRadioButton = findViewById(R.id.cRadioBtn);
-        dRadioButton = findViewById(R.id.dRadioBtn);
+        timerTxtView = findViewById(R.id.timerTxtView);
+        saveBtn = findViewById(R.id.saveBtn);
         editBtn = findViewById(R.id.editBtn);
 
     }
@@ -114,8 +123,8 @@ public class QuestionActivity extends AppCompatActivity {
     private void updateAnswer() {
         RadioButton radioButton = findViewById(radioGroup.getCheckedRadioButtonId());
         String answer = radioButton.getText().toString();
-        Map<String, Object> map = new HashMap<>();
-        map.put("answer", answer);
-        ApplicationClass.documentSnapshot.getReference().set(map, SetOptions.merge());
+
+        questionDataOriginal.setAnswer(answer);
+         ApplicationClass.documentSnapshot.getReference().set(questionDataOriginal, SetOptions.merge());
     }
 }

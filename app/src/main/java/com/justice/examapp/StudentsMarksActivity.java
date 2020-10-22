@@ -19,6 +19,8 @@ import com.google.firebase.firestore.Query;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.firestore.QuerySnapshot;
 
+import static com.justice.examapp.TestCompleteActivity.COLLECTION_RESULTS;
+
 public class StudentsMarksActivity extends AppCompatActivity {
     private RecyclerView recyclerView;
     private StudentsMarksAdapter adapter;
@@ -49,7 +51,7 @@ public class StudentsMarksActivity extends AppCompatActivity {
     }
 
     private void deleteAllStudentsMarks() {
-        FirebaseFirestore.getInstance().collection("marks").get().addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
+        FirebaseFirestore.getInstance().collection(COLLECTION_RESULTS).get().addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
             @Override
             public void onComplete(@NonNull Task<QuerySnapshot> task) {
                 for (QueryDocumentSnapshot documentSnapshot : task.getResult()) {
@@ -60,7 +62,7 @@ public class StudentsMarksActivity extends AppCompatActivity {
     }
 
     private void setUpRecyclerAdapter() {
-        Query query = FirebaseFirestore.getInstance().collection("marks");
+        Query query = FirebaseFirestore.getInstance().collection(COLLECTION_RESULTS);
 
         FirestoreRecyclerOptions<Student> firestoreRecyclerOptions = new FirestoreRecyclerOptions.Builder<Student>().setQuery(query, Student.class).setLifecycleOwner(this).build();
         adapter = new StudentsMarksAdapter(this, firestoreRecyclerOptions);

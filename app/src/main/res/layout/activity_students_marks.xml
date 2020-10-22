@@ -8,6 +8,7 @@
     android:padding="16dp"
     tools:context=".StudentsMarksActivity">
     <androidx.recyclerview.widget.RecyclerView
+        android:background="@android:color/darker_gray"
         android:layout_width="match_parent"
         android:id="@+id/recyclerView"
         android:layout_height="match_parent"/>

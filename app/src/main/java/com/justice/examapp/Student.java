@@ -1,35 +1,28 @@
 package com.justice.examapp;
 
+import com.google.firebase.firestore.DocumentId;
+
 public class Student {
     private String firstName;
     private String lastName;
-    private String id;
-    private int marks;
-    private int outOf;
+    private Results results;
 
     public Student() {
     }
 
-    public Student(String firstName, String lastName, String id, int marks) {
+    public Student(String firstName, String lastName) {
         this.firstName = firstName;
         this.lastName = lastName;
-        this.id = id;
-        this.marks = marks;
-    }
-    public int getOutOf() {
-        return outOf;
+
+
     }
 
-    public void setOutOf(int outOf) {
-        this.outOf = outOf;
+    public Results getResults() {
+        return results;
     }
 
-    public String getId() {
-        return id;
-    }
-
-    public void setId(String id) {
-        this.id = id;
+    public void setResults(Results results) {
+        this.results = results;
     }
 
     public String getFirstName() {
@@ -48,11 +41,4 @@ public class Student {
         this.lastName = lastName;
     }
 
-    public int getMarks() {
-        return marks;
-    }
-
-    public void setMarks(int marks) {
-        this.marks = marks;
-    }
 }

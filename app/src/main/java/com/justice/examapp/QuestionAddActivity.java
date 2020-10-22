@@ -5,12 +5,14 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ProgressBar;
 import android.widget.Toast;
 
 import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 import com.google.android.material.textfield.TextInputLayout;
 import com.google.firebase.firestore.DocumentReference;
@@ -24,17 +26,19 @@ import java.util.Map;
 import es.dmoral.toasty.Toasty;
 
 public class QuestionAddActivity extends AppCompatActivity {
+    private static final String TAG = "QuestionAddActivity";
+    public static final String COLLECTION_QUESTIONS = "questions";
     private ProgressBar progressBar;
 
     private TextInputLayout questionEdtTxt;
     private TextInputLayout aChoiceEdtTxt;
     private TextInputLayout bChoiceEdtTxt;
     private TextInputLayout cChoiceEdtTxt;
-    private TextInputLayout dChoiceEdtTxt;
+    private TextInputLayout timerEdtTxt;
     private Button saveBtn;
 
     private boolean updating = false;
-    private QuestionData questionDataOriginal;
+    private QuestionModel questionDataOriginal;
 
     private FirebaseFirestore firebaseFirestore = FirebaseFirestore.getInstance();
 
@@ -50,7 +54,7 @@ public class QuestionAddActivity extends AppCompatActivity {
 
     private void check_if_question_is_being_updated() {
         if (ApplicationClass.documentSnapshot != null) {
-            questionDataOriginal = ApplicationClass.documentSnapshot.toObject(QuestionData.class);
+            questionDataOriginal = ApplicationClass.documentSnapshot.toObject(QuestionModel.class);
             updating = true;
             setDefaultValues();
         }
@@ -58,10 +62,10 @@ public class QuestionAddActivity extends AppCompatActivity {
 
     private void setDefaultValues() {
         questionEdtTxt.getEditText().setText(questionDataOriginal.getQuestion());
-        aChoiceEdtTxt.getEditText().setText(questionDataOriginal.getFirstChoice());
-        bChoiceEdtTxt.getEditText().setText(questionDataOriginal.getSecondChoice());
-        cChoiceEdtTxt.getEditText().setText(questionDataOriginal.getThirdChoice());
-        dChoiceEdtTxt.getEditText().setText(questionDataOriginal.getForthChoice());
+        aChoiceEdtTxt.getEditText().setText(questionDataOriginal.getOption_a());
+        bChoiceEdtTxt.getEditText().setText(questionDataOriginal.getOption_b());
+        cChoiceEdtTxt.getEditText().setText(questionDataOriginal.getOption_c());
+        timerEdtTxt.getEditText().setText(questionDataOriginal.getTimer() + "");
 
     }
 
@@ -69,19 +73,19 @@ public class QuestionAddActivity extends AppCompatActivity {
         saveBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                saveBtn.setVisibility(View.GONE);
                 saveData();
             }
         });
     }
 
     private void saveData() {
-        QuestionData questionData = new QuestionData();
+        QuestionModel questionData = new QuestionModel();
         String question = questionEdtTxt.getEditText().getText().toString().trim();
         String first = aChoiceEdtTxt.getEditText().getText().toString().trim();
         String second = bChoiceEdtTxt.getEditText().getText().toString().trim();
         String third = cChoiceEdtTxt.getEditText().getText().toString().trim();
-        String four = dChoiceEdtTxt.getEditText().getText().toString().trim();
+        String timer = timerEdtTxt.getEditText().getText().toString().trim();
+
 
         if (question.isEmpty() || first.isEmpty() || second.isEmpty()) {
             Toasty.error(this, "Please fill fields", Toast.LENGTH_SHORT).show();
@@ -89,31 +93,46 @@ public class QuestionAddActivity extends AppCompatActivity {
         }
 
         questionData.setQuestion(question);
-        questionData.setFirstChoice(first);
-        questionData.setSecondChoice(second);
-        questionData.setThirdChoice(third);
-        questionData.setForthChoice(four);
+        questionData.setOption_a(first);
+        questionData.setOption_b(second);
+        questionData.setOption_c(third);
+        questionData.setTimer(Long.parseLong(timer));
+        //  questionData.setAnswer(first);
+        questionData.setDate(null);
 
-        Map<String, Object> map = null;
+      /*  Map<String, Object> map = null;
         map = new HashMap<>();
         map.put("question", questionData.getQuestion());
-        map.put("firstChoice", questionData.getFirstChoice());
-        map.put("secondChoice", questionData.getSecondChoice());
-        map.put("thirdChoice", questionData.getThirdChoice());
-        map.put("forthChoice", questionData.getForthChoice());
-        map.put("answer", questionData.getAnswer());
+        map.put("option_a", questionData.getFirstChoice());
+        map.put("option_b", questionData.getSecondChoice());
+        map.put("option_c", questionData.getThirdChoice());
+        map.put("timer", questionData.getForthChoice());
+        map.put("answer", questionData.getFirstChoice());
         map.put("date", FieldValue.serverTimestamp());
-
-        saveDataInDatabase(questionData, map);
+*/
+        saveDataInDatabase(questionData);
 
 
     }
 
-    private void saveDataInDatabase(QuestionData questionData, Map map) {
+    private void saveDataInDatabase(QuestionModel questionData) {
         if (updating) {
+            Log.d(TAG, "saveDataInDatabase: starting update");
+            questionData.setAnswer(questionDataOriginal.getAnswer());
             progressBar.setVisibility(View.VISIBLE);
 
-            ApplicationClass.documentSnapshot.getReference().set(map).addOnCompleteListener(new OnCompleteListener<Void>() {
+           /* ApplicationClass.documentSnapshot.getReference().set(questionData).addOnSuccessListener(new OnSuccessListener<Void>() {
+                @Override
+                public void onSuccess(Void aVoid) {
+                    Log.d(TAG, "onSuccess: update done");
+                    Toasty.success(QuestionAddActivity.this, "Question saved ", Toast.LENGTH_SHORT).show();
+                    finish();
+                    progressBar.setVisibility(View.GONE);
+
+                }
+            });*/
+
+            ApplicationClass.documentSnapshot.getReference().set(questionData).addOnCompleteListener(new OnCompleteListener<Void>() {
                 @Override
                 public void onComplete(@NonNull Task<Void> task) {
                     if (task.isSuccessful()) {
@@ -124,14 +143,15 @@ public class QuestionAddActivity extends AppCompatActivity {
                         Toast.makeText(QuestionAddActivity.this, "Error: " + task.getException().getMessage(), Toast.LENGTH_SHORT).show();
 
                     }
+
                     progressBar.setVisibility(View.GONE);
+
                 }
             });
         } else {
-            questionData.setAnswer(questionData.getFirstChoice());
-            map.put("answer", questionData.getFirstChoice());
+            questionData.setAnswer(questionData.getOption_a());
             progressBar.setVisibility(View.VISIBLE);
-            firebaseFirestore.collection("questions").add(questionData).addOnCompleteListener(new OnCompleteListener<DocumentReference>() {
+            firebaseFirestore.collection(COLLECTION_QUESTIONS).add(questionData).addOnCompleteListener(new OnCompleteListener<DocumentReference>() {
                 @Override
                 public void onComplete(@NonNull Task<DocumentReference> task) {
                     if (task.isSuccessful()) {
@@ -175,7 +195,7 @@ public class QuestionAddActivity extends AppCompatActivity {
         aChoiceEdtTxt = findViewById(R.id.achoiceEdtTxt);
         bChoiceEdtTxt = findViewById(R.id.bchoiceEdtTxt);
         cChoiceEdtTxt = findViewById(R.id.cchoiceEdtTxt);
-        dChoiceEdtTxt = findViewById(R.id.dchoiceEdtTxt);
+        timerEdtTxt = findViewById(R.id.dchoiceEdtTxt);
         saveBtn = findViewById(R.id.saveBtn);
 
     }

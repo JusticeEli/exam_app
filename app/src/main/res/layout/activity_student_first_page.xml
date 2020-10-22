@@ -61,14 +61,30 @@
     </com.google.android.material.textfield.TextInputLayout>
 
     <Button
+        android:id="@+id/submitBtn"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="16dp"
         android:backgroundTint="@color/colorPrimary"
         android:text="Submit"
         android:textAllCaps="false"
-        android:id="@+id/submitBtn"
-        app:layout_constraintTop_toBottomOf="@+id/idEdtTxt"/>
+        app:layout_constraintTop_toBottomOf="@+id/idEdtTxt" />
+    <Button
+        android:id="@+id/logoutBtn"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:backgroundTint="@color/colorPrimary"
+        android:text="logout"
+        android:textAllCaps="false"
+        app:layout_constraintTop_toBottomOf="@+id/submitBtn" />
 
+    <ProgressBar
+        android:id="@+id/progressBar"
+        android:visibility="gone"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        app:layout_constraintTop_toBottomOf="@+id/idEdtTxt" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

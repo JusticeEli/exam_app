@@ -29,22 +29,24 @@ public class TeacherFirstPageActivity extends AppCompatActivity {
     private FloatingActionButton fob;
     private TeacherFirstPageAdapter adapter;
 
-    private FirebaseFirestore firebaseFirestore=FirebaseFirestore.getInstance();
+    private FirebaseFirestore firebaseFirestore = FirebaseFirestore.getInstance();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_teacher_first_page);
+   //    deleteAllQuestions();
 
         initWidgets();
         setOnClickListeners();
-        setUpRecyclerAdapter();
+       setUpRecyclerAdapter();
     }
 
     private void setUpRecyclerAdapter() {
         Query query = firebaseFirestore.collection("questions");
 
-        FirestoreRecyclerOptions<QuestionData> firestoreRecyclerOptions = new FirestoreRecyclerOptions.Builder<QuestionData>().setQuery(query, QuestionData.class).setLifecycleOwner(this).build();
+        FirestoreRecyclerOptions<QuestionModel> firestoreRecyclerOptions = new FirestoreRecyclerOptions.Builder<QuestionModel>().setQuery(query, QuestionModel.class).setLifecycleOwner(this).build();
+
         adapter = new TeacherFirstPageAdapter(this, firestoreRecyclerOptions);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
         recyclerView.setAdapter(adapter);
@@ -89,7 +91,7 @@ public class TeacherFirstPageActivity extends AppCompatActivity {
     }
 
     private void initWidgets() {
-        progressBar=findViewById(R.id.progressBar);
+        progressBar = findViewById(R.id.progressBar);
         recyclerView = findViewById(R.id.recyclerView);
         fob = findViewById(R.id.fob);
     }
@@ -116,7 +118,7 @@ public class TeacherFirstPageActivity extends AppCompatActivity {
         firebaseFirestore.collection("questions").get().addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
             @Override
             public void onComplete(@NonNull Task<QuerySnapshot> task) {
-                for (QueryDocumentSnapshot documentSnapshot:task.getResult()){
+                for (QueryDocumentSnapshot documentSnapshot : task.getResult()) {
                     documentSnapshot.getReference().delete();
                 }
             }

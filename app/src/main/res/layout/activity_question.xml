@@ -5,6 +5,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:padding="16dp"
+    android:background="@color/colorPrimaryDark"
     tools:context=".QuestionActivity">
 
     <com.google.android.material.textfield.TextInputLayout
@@ -18,14 +19,17 @@
         app:layout_constraintTop_toTopOf="parent">
 
         <TextView
+         android:textSize="32sp"
+            android:textAppearance="@style/TextAppearance.AppCompat.Title"
             android:id="@+id/questionTxtView"
+            android:text="hey its me"
             android:layout_width="match_parent"
             android:layout_height="wrap_content" />
     </com.google.android.material.textfield.TextInputLayout>
 
     <RadioGroup
         android:id="@+id/radioGroup"
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
 
         android:layout_height="wrap_content"
         android:layout_marginTop="100dp"
@@ -34,14 +38,15 @@
 
         <RadioButton
             android:id="@+id/aRadioBtn"
-            android:layout_width="wrap_content"
+            android:checked="true"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="A" />
 
         <RadioButton
             android:layout_marginTop="20dp"
             android:id="@+id/bRadioBtn"
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="B" />
 
@@ -49,19 +54,33 @@
             android:layout_marginTop="20dp"
 
             android:id="@+id/cRadioBtn"
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="C" />
 
-        <RadioButton
-            android:layout_marginTop="20dp"
-
-            android:id="@+id/dRadioBtn"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="D" />
 
     </RadioGroup>
+    <TextView
+        android:layout_width="wrap_content"
+        android:id="@+id/timerTxtView"
+        app:layout_constraintTop_toBottomOf="@+id/radioGroup"
+        app:layout_constraintLeft_toLeftOf="parent"
+        android:padding="10dp"
+        android:text="20s"
+        android:textAppearance="?android:textAppearanceSearchResultSubtitle"
+        android:textColor="@color/colorAccent"
+        android:layout_height="wrap_content"/>
+    <Button
+        android:id="@+id/saveBtn"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="save"
+        android:textAllCaps="false"
+        android:layout_marginTop="16dp"
+        android:layout_marginEnd="16dp"
+        android:background="@drawable/button"
+       app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/timerTxtView" />
 
     <Button
         android:id="@+id/editBtn"
@@ -73,6 +92,6 @@
         android:layout_marginEnd="16dp"
         android:background="@drawable/button"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/radioGroup" />
+        app:layout_constraintTop_toTopOf="@id/saveBtn"/>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

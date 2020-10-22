@@ -3,10 +3,10 @@ package com.justice.examapp;
 
 import android.content.Context;
 import android.content.Intent;
-import android.os.Handler;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.RadioButton;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -17,31 +17,26 @@ import com.firebase.ui.firestore.FirestoreRecyclerOptions;
 
 import java.text.SimpleDateFormat;
 
-public class TeacherFirstPageAdapter extends FirestoreRecyclerAdapter<QuestionData, TeacherFirstPageAdapter.ViewHolder> {
+public class TeacherFirstPageAdapter extends FirestoreRecyclerAdapter<QuestionModel, TeacherFirstPageAdapter.ViewHolder> {
     private Context context;
 
-    public TeacherFirstPageAdapter(Context context, @NonNull FirestoreRecyclerOptions<QuestionData> options) {
+    public TeacherFirstPageAdapter(Context context, @NonNull FirestoreRecyclerOptions<QuestionModel> options) {
         super(options);
         this.context = context;
 
     }
 
     @Override
-    protected void onBindViewHolder(@NonNull final ViewHolder holder, int position, @NonNull final QuestionData model) {
-        /**
-         *   new Handler().postDelayed(new Runnable() {
-         *             @Override
-         *             public void run() {
-         *                 String date = new SimpleDateFormat("HH:mm\ndd-MM-yyy").format(model.getDate());
-         *                 holder.dateTxtView.setText(date);
-         *
-         *             }
-         *         }, 100);
-         */
+    protected void onBindViewHolder(@NonNull final ViewHolder holder, int position, @NonNull final QuestionModel model) {
 
+        holder.questionTxtView.setText(position+". "+model.getQuestion());
+        holder.answerRadioButton.setText(model.getAnswer());
+        if (model.getDate()!=null){
+            String date = new SimpleDateFormat("HH:mm\ndd-MM-yyy").format(model.getDate());
+            holder.dateTxtView.setText(date);
 
-        holder.questionTxtView.setText(model.getQuestion());
-        holder.answerEdtTxt.setText(model.getAnswer());
+        }
+
 
     }
 
@@ -55,7 +50,7 @@ public class TeacherFirstPageAdapter extends FirestoreRecyclerAdapter<QuestionDa
 
     public class ViewHolder extends RecyclerView.ViewHolder {
         private TextView questionTxtView;
-        private TextView answerEdtTxt;
+        private RadioButton answerRadioButton;
 
         private TextView dateTxtView;
 
@@ -65,7 +60,7 @@ public class TeacherFirstPageAdapter extends FirestoreRecyclerAdapter<QuestionDa
             super(itemView);
             this.itemView = itemView;
             questionTxtView = itemView.findViewById(R.id.questionTxtView);
-            answerEdtTxt = itemView.findViewById(R.id.answerEdtTxt);
+            answerRadioButton = itemView.findViewById(R.id.answerRadioButton);
             dateTxtView = itemView.findViewById(R.id.dateTxtView);
 
             setOnClickListeners();
